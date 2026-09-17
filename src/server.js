@@ -16,8 +16,9 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 // ─────────────────────────────────────────────
 // Allows our React frontend (running on port 5173) to communicate with
 // our Express backend (running on port 5000) securely.
+const cleanFrontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 const allowedOrigins = [
-  FRONTEND_URL,
+  cleanFrontendUrl,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
 ];
@@ -27,7 +28,15 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or Postman)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
+
+      const cleanOrigin = origin.replace(/\/$/, '');
+      const isAllowed =
+        cleanFrontendUrl === '*' ||
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith('.vercel.app') ||
+        cleanOrigin.includes('localhost');
+
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error(`CORS policy blocked access from origin: ${origin}`));
